@@ -79,16 +79,39 @@ class Critic(Middleware):
     name = "critic"
 
     def after_agent(self, ctx, report):
-        # TODO (§2): khoảng 10-25 dòng.
-        #  1. Lấy report["claims"]; nếu rỗng hoặc không phải list thì thôi.
-        #  2. Với mỗi claim: nếu claim["text"] có trong ctx.observed_text
-        #     -> giữ nguyên (KHÔNG sửa chữ).
-        #  3. Nếu không: thử tách câu ghép (trường hợp (c) ở docstring).
-        #     Tách được -> giữ cả hai nửa, mỗi nửa gắn doc_id của tài liệu
-        #     thật sự chứa nó, và đặt report["abstain"] = True.
-        #  4. Không tách được -> đây là bịa: bỏ claim đi.
-        #  5. Nếu không còn claim nào: report["abstain"] = True,
-        #     claims = [], citations = [], và viết lại "answer" nói rõ là
-        #     không đủ căn cứ.
-        #  6. Cập nhật report["citations"] cho khớp với claims còn lại.
-        return report  # <- mặc định KHÔNG LÀM GÌ: agent vẫn chạy được
+        claims = report.get("claims")
+        if not isinstance(claims, list):
+            return report
+        observed = ctx.observed_text
+        kept = []
+        docs = ctx.corpus.docs if ctx.corpus is not None else []
+        for claim in claims:
+            text = claim.get("text") if isinstance(claim, dict) else None
+            if not isinstance(text, str) or not text.strip():
+                continue
+            if text in observed:
+                kept.append(claim)
+                continue
+            # Only trim model-written text; both halves need observed sources.
+            for index in range(len(text)):
+                if not text.startswith(" và ", index):
+                    continue
+                halves = (text[:index], text[index + len(" và "):])
+                sources = [[doc for doc in docs if half and half in observed
+                            and doc.body in observed
+                            and any(half in line for line in doc.body.splitlines())]
+                           for half in halves]
+                pair = next(((a, b) for a in sources[0] for b in sources[1]
+                             if a.doc_id != b.doc_id), None)
+                if pair is not None:
+                    kept.extend({**claim, "text": half, "doc_id": doc.doc_id}
+                                for half, doc in zip(halves, pair))
+                    report["abstain"] = True
+                    break
+        report["claims"] = kept
+        report["citations"] = sorted({c["doc_id"] for c in kept
+                                      if isinstance(c.get("doc_id"), str)})
+        if not kept:
+            report["abstain"] = True
+            report["answer"] = "Không đủ căn cứ trong tài liệu đã quan sát để trả lời."
+        return report
