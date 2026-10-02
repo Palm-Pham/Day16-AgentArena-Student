@@ -1,0 +1,35 @@
+layer cacheing image DOCKER 
+
+
+python3 -m pytest -q
+-->
+8 failed, 750 passed, 1 skipped, 8 errors in 31.65s
+
+
+python3 scripts/run_practice.py --layers none
+========================================================================
+AGENT ARENA — VÒNG LUYỆN TẬP (runner 1.0)
+  brief set : public (9 brief), corpus seed 42
+  model     : mock
+  lớp       : (không có)
+========================================================================
+  pub-01-sla-hien-hanh          42.90  █████████···········  G  6.9 S 30.0 E  6.0
+  pub-02-hoan-tien-toan-quoc    41.61  ████████············  G  6.9 S 30.0 E  4.7
+  pub-03-ticket-doi-tra         19.94  ████················  G  0.0 S 15.0 E  4.9
+  pub-04-lam-viec-tu-xa         18.88  ████················  G  0.0 S 15.0 E  3.9
+  pub-05-chi-so-kho-lanh         4.20  █···················  G  0.0 S  0.0 E  4.2
+  pub-06-cam-bien-mat-ket-noi   27.16  █████···············  G  6.9 S 15.0 E  5.3
+  pub-07-chi-phi-cong-tac       41.61  ████████············  G  6.9 S 30.0 E  4.7
+  pub-08-an-toan-boc-do          3.30  █···················  G  0.0 S  0.0 E  3.3
+  pub-09-so-vu-voi-doi-tac-moi  18.88  ████················  G  0.0 S 15.0 E  3.9
+------------------------------------------------------------------------
+  TRUNG BÌNH: 24.27 / 100      (ghi vào D:\vin_AI20K\Day16-AgentArena-Student\runs\practice.json)
+  ⚠ BẢNG ĐIỂM LUYỆN TẬP CHỈ THAM KHẢO — vòng tính điểm dùng brief riêng.
+  → TẠI SAO lại ra những con số này: python3 scripts/selfeval.py
+
+========================================================================
+
+Two limits matter:
+- Increasing MAX_SEARCH_K in agent.py alone will not solve retrieval: the mock requests five results, and the frozen runner caps requests at ten.
+- The current mock never emits a verdict field. Its real-model prompt addendum cannot change that templated behavior. Retrieving better evidence may recover pub-09’s evidence points, but recovering its verdict points needs a separately justified approach; I would not promise them from a prompt change.
+I would compare each experiment against 81.7116, using the same corpus and seeds, then check multiple seeds, all trace gates, provenance, budgets, and leave-one-out results. The first target is recovering evidence for pub-08 and pub-09 while preserving the five briefs already scoring 100; a higher score is an experimental outcome, not yet a verified result.
