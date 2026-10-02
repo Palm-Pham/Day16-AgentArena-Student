@@ -21,10 +21,24 @@ def context(docs=(), observed="", limit=8, calls=0):
 def test_critic_retains_supported_text_and_removes_fabrication():
     claim = {"text": "Evidence", "doc_id": "wrong"}
     report = {"claims": [claim, {"text": "Invented", "doc_id": "x"}]}
-    result = Critic().after_agent(context(observed="Evidence"), report)
+    docs = [SimpleNamespace(doc_id="source", body="Evidence")]
+    result = Critic().after_agent(context(docs, observed="Evidence"), report)
     assert result["claims"] == [claim]
     assert result["claims"][0] is claim
     assert result["citations"] == ["wrong"]
+
+
+def test_critic_rejects_snippets_and_cross_line_claims():
+    docs = [SimpleNamespace(doc_id="source", body="Evidence\nOther line")]
+    report = {"claims": [{"text": "Evidence", "doc_id": "source"}]}
+    result = Critic().after_agent(context(docs, observed="Evidence snippet"), report)
+    assert result["claims"] == []
+    assert result["abstain"] is True
+
+    crossing = {"claims": [{"text": "Evidence\nOther line", "doc_id": "source"}]}
+    result = Critic().after_agent(context(docs, observed=docs[0].body), crossing)
+    assert result["claims"] == []
+    assert result["abstain"] is True
 
 
 def test_critic_splits_conflict_using_only_model_written_substrings():

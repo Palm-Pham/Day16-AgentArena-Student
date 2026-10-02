@@ -89,7 +89,8 @@ class Critic(Middleware):
             text = claim.get("text") if isinstance(claim, dict) else None
             if not isinstance(text, str) or not text.strip():
                 continue
-            if text in observed:
+            if any(doc.body in observed and any(text in line for line in doc.body.splitlines())
+                   for doc in docs):
                 kept.append(claim)
                 continue
             # Only trim model-written text; both halves need observed sources.
