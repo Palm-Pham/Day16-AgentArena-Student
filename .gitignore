@@ -4,6 +4,14 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+/Lib/
+/pyvenv.cfg
+/scripts/Activate.ps1
+/scripts/activate
+/scripts/activate.bat
+/scripts/deactivate.bat
+/scripts/pip*.exe
+/scripts/python*.exe
 
 # Test + tooling caches
 .pytest_cache/
